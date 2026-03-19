@@ -70,3 +70,6 @@ st.dataframe(df)
 
 fig = px.line(df, x="year", y="value", color="indicator")
 st.plotly_chart(fig)
+import streamlit as st
+
+st.title("Test App Working ✅")
