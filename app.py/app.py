@@ -3,73 +3,84 @@ import pandas as pd
 import plotly.express as px
 import os
 
-# ১. পেজ সেটআপ
-st.set_page_config(page_title="BD Child Protection", layout="wide")
-st.title("🇧🇩 Bangladesh Child Protection Dashboard")
+# -----------------------------
+# CONFIG & TITLE
+# -----------------------------
+st.set_page_config(page_title="Bangladesh Dashboard", layout="wide", page_icon="🇧🇩")
+st.title("🇧🇩 Bangladesh Child Protection & Education Dashboard")
 
-# ২. ডেটা লোড করার ফাংশন (সেফ মেথড)
+# -----------------------------
+# LOAD DATA (With Caching & Safe Path)
+# -----------------------------
 @st.cache_data
 def load_data():
-    file_path = "data/bangladesh_child_protection_data.csv"
+    # আপনার দেওয়া পাথটি এখানে সেট করা হয়েছে
+    file_path = "child-protection-bd/Data/data/bangladesh_child_protection_data.csv"
     
     if os.path.exists(file_path):
         df = pd.read_csv(file_path)
-        # নিশ্চিত করা যে 'year' এবং 'value' কলাম সংখ্যা হিসেবে আছে
+        # ডাটা টাইপ নিশ্চিত করা
         df['year'] = pd.to_numeric(df['year'], errors='coerce')
         df['value'] = pd.to_numeric(df['value'], errors='coerce')
         return df.dropna(subset=['year', 'value'])
     else:
-        st.error(f"❌ ফাইলটি '{file_path}' পাথে পাওয়া যায়নি!")
-        return pd.DataFrame()
+        return None
 
 df = load_data()
 
-# ৩. যদি ডেটা সফলভাবে লোড হয়
-if not df.empty:
-    # --- ইন্টারঅ্যাক্টিভ ফিল্টার ---
-    st.sidebar.header("ফিল্টার অপশন")
-    selected_indicators = st.sidebar.multiselect(
-        "ইন্ডিকেটর সিলেক্ট করুন:",
-        options=df["indicator"].unique(),
-        default=df["indicator"].unique()[:2] # ডিফল্ট ২টি সিলেক্ট থাকবে
-    )
+if df is None:
+    st.error("❌ CSV ফাইলটি পাওয়া যায়নি। দয়া করে ফাইল পাথটি চেক করুন।")
+    st.info(f"প্রত্যাশিত পাথ: child-protection-bd/Data/data/bangladesh_child_protection_data.csv")
+    st.stop()
 
-    # ফিল্টার করা ডেটা
-    filtered_df = df[df["indicator"].isin(selected_indicators)]
+# -----------------------------
+# SIDEBAR FILTERS (ইন্টারঅ্যাক্টিভিটি যোগ করা হয়েছে)
+# -----------------------------
+st.sidebar.header("🔍 ফিল্টার করুন")
+selected_indicators = st.sidebar.multiselect(
+    "ইন্ডিকেটর সিলেক্ট করুন:",
+    options=df["indicator"].unique(),
+    default=df["indicator"].unique()
+)
 
-    # --- মেইন কন্টেন্ট ---
-    col1, col2 = st.columns([1, 2])
+filtered_df = df[df["indicator"].isin(selected_indicators)]
 
-    with col1:
-        st.subheader("📄 ডেটা টেবিল")
-        st.dataframe(filtered_df, use_container_width=True)
+# -----------------------------
+# KPI SECTION (Dynamic Columns)
+# -----------------------------
+st.subheader("📊 Key Indicators (Latest)")
 
-    with col2:
-        st.subheader("📈 ট্রেন্ড অ্যানালাইসিস")
-        fig = px.line(
-            filtered_df, 
-            x="year", 
-            y="value", 
-            color="indicator",
-            markers=True,
-            template="plotly_white",
-            labels={"year": "বছর", "value": "মান (%)", "indicator": "সূচক"}
+# প্রতিটি ইন্ডিকেটরের সর্বশেষ ডেটা নেওয়া
+latest = filtered_df.sort_values("year").groupby("indicator").last().reset_index()
+
+if not latest.empty:
+    cols = st.columns(min(len(latest), 4)) # ডায়নামিক কলাম (সর্বোচ্চ ৪টি)
+    for i, row in latest.iterrows():
+        cols[i % len(cols)].metric(
+            label=row["indicator"].replace("_", " ").title(), 
+            value=f"{row['value']}"
         )
-        st.plotly_chart(fig, use_container_width=True)
-else:
-    st.info("দয়া করে আপনার CSV ফাইলটি 'data' ফোল্ডারে রাখুন এবং আবার চেষ্টা করুন।")
-import streamlit as st
-import pandas as pd
-import plotly.express as px
 
-st.title("Bangladesh Child Protection Dashboard")
+st.divider()
 
-df = pd.read_csv("data/bangladesh_child_protection_data.csv")
+# -----------------------------
+# VISUALIZATIONS (Layout Optimization)
+# -----------------------------
+col_chart1, col_chart2 = st.columns(2)
 
-st.dataframe(df)
+with col_chart1:
+    st.subheader("📈 Trend Over Time")
+    fig1 = px.line(filtered_df, x="year", y="value", color="indicator", markers=True, template="plotly_white")
+    st.plotly_chart(fig1, use_container_width=True)
 
-fig = px.line(df, x="year", y="value", color="indicator")
-st.plotly_chart(fig)
-import streamlit as st
+with col_chart2:
+    st.subheader("📊 Latest Comparison")
+    fig2 = px.bar(latest, x="indicator", y="value", color="indicator", text_auto=True)
+    st.plotly_chart(fig2, use_container_width=True)
 
-st.title("Test App Working ✅")
+# -----------------------------
+# DATA TABLE
+# -----------------------------
+with st.expander("📄 সম্পূর্ণ ডেটাসেট দেখুন"):
+    st.dataframe(filtered_df, use_container_width=True)
+
