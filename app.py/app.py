@@ -3,54 +3,56 @@ import pandas as pd
 import plotly.express as px
 import os
 
+# ১. পেজ কনফিগারেশন
 st.set_page_config(page_title="BD Child Protection", layout="wide")
-
 st.title("🇧🇩 Bangladesh Child Protection Dashboard")
 
-# --- সেফ ডেটা লোডিং ---
+# ২. সেফ ডেটা লোডিং ফাংশন
 @st.cache_data
 def load_data():
     file_path = "data/bangladesh_child_protection_data.csv"
     
     if os.path.exists(file_path):
         df = pd.read_csv(file_path)
-        # ডাটা টাইপ ঠিক করা (Year যেন ইন্টিজার হয়)
+        # নিশ্চিত করা যে year এবং value সংখ্যা (Numeric) হিসেবে আছে
         df['year'] = pd.to_numeric(df['year'], errors='coerce')
         df['value'] = pd.to_numeric(df['value'], errors='coerce')
-        return df.dropna(subset=['year', 'value'])
+        return df.dropna(subset=['year', 'value']) # খালি রো বাদ দেওয়া
     else:
-        st.error(f"❌ ফাইলটি '{file_path}' পাথে পাওয়া যায়নি!")
+        # যদি ফাইল না থাকে তবে ডামি ডেটা (টেস্ট করার জন্য)
+        st.warning(f"CSV ফাইলটি '{file_path}' পাথে পাওয়া যায়নি।")
         return pd.DataFrame()
 
 df = load_data()
 
+# ৩. যদি ডেটা থাকে তবেই চার্ট দেখানো
 if not df.empty:
-    # --- ইন্টারঅ্যাক্টিভ ফিল্টার ---
-    indicators = st.multiselect(
-        "ইন্ডিকেটর সিলেক্ট করুন:",
+    # সাইডবার ফিল্টার
+    selected_indicators = st.sidebar.multiselect(
+        "সিলেক্ট করুন (Indicator):",
         options=df["indicator"].unique(),
-        default=df["indicator"].unique()[0]
+        default=df["indicator"].unique()[:2]
     )
-    
-    filtered_df = df[df["indicator"].isin(indicators)]
 
-    # --- ডাটা টেবিল ---
-    with st.expander("সম্পূর্ণ ডেটা দেখুন"):
-        st.dataframe(filtered_df, use_container_width=True)
+    # ফিল্টার করা ডেটা
+    filtered_df = df[df["indicator"].isin(selected_indicators)]
 
-    # --- লাইন চার্ট ---
-    st.subheader("📈 Trends Analysis")
+    # টেবিল প্রদর্শন
+    st.subheader("📄 Data Overview")
+    st.dataframe(filtered_df, use_container_width=True)
+
+    # ৪. লাইন চার্ট (সঠিকভাবে কনফিগার করা)
+    st.subheader("📈 Trends Over Time")
     fig = px.line(
         filtered_df, 
         x="year", 
         y="value", 
         color="indicator",
         markers=True,
-        labels={"year": "বছর", "value": "মান", "indicator": "সূচক"},
-        template="plotly_white"
+        template="plotly_white",
+        labels={"year": "Year", "value": "Rate (%)", "indicator": "Indicator"}
     )
     
     st.plotly_chart(fig, use_container_width=True)
 else:
     st.info("দয়া করে আপনার CSV ফাইলটি 'data' ফোল্ডারে রাখুন।")
-
