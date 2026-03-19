@@ -1,0 +1,10 @@
+category,indicator,year,value,unit,source,status
+child_labour,child_labour_rate,2019,11.3,%,UNICEF MICS,Moderate
+child_labour,hazardous_child_labour,2019,8.0,%,UNICEF MICS,High Risk
+child_marriage,child_marriage_rate,2019,51.4,%,UNICEF MICS,Critical
+protection,birth_registration,2019,56.0,%,UNICEF MICS,Low Coverage
+employment,children_employment_rate,2013,5.0,%,World Bank,Declining
+employment,children_employment_rate,2006,16.2,%,World Bank,Historical High
+employment,children_employment_rate,2003,17.5,%,World Bank,Baseline
+labour_volume,child_labour_total,2022,1.78,Million,BBS,Current Total
+labour_volume,hazardous_labour_total,2022,1.07,Million,BBS,Current Hazardous
