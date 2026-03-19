@@ -58,3 +58,15 @@ if not df.empty:
         st.plotly_chart(fig, use_container_width=True)
 else:
     st.info("দয়া করে আপনার CSV ফাইলটি 'data' ফোল্ডারে রাখুন এবং আবার চেষ্টা করুন।")
+import streamlit as st
+import pandas as pd
+import plotly.express as px
+
+st.title("Bangladesh Child Protection Dashboard")
+
+df = pd.read_csv("data/bangladesh_child_protection_data.csv")
+
+st.dataframe(df)
+
+fig = px.line(df, x="year", y="value", color="indicator")
+st.plotly_chart(fig)
